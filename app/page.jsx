@@ -47,10 +47,11 @@ export default function Page() {
     // Googleへ送信
     try {
       await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(log),
-      });
+  method: 'POST',
+  mode: 'no-cors',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(log),
+});
     } catch (e) {
       alert('通信エラー');
     }
