@@ -42,15 +42,17 @@ export default function Page() {
 
     // ② GASへ送信
     try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(record)
-      });
+     const res = await fetch(GAS_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(record)
+});
 
+if (!res.ok) {
+  throw new Error('GAS送信失敗');
+}
       console.log('sent to GAS');
     } catch (err) {
       alert('通信エラー');
