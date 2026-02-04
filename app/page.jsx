@@ -30,43 +30,40 @@ export default function Page() {
 
   // 打刻処理
   const handleClock = async (type) => {
-    if (!selectedProperty) {
-      alert('宿を選んでください');
-      return;
-    }
+  if (!selectedProperty) {
+    alert('宿を選んでください');
+    return;
+  }
 
-    const now = new Date();
+  const now = new Date();
 
-    const record = {
-      property: selectedProperty,
-      type,
-      time: now.toISOString(),
-    };
-
-    // ① ローカルに保存（表示用）
-    setLogs((prev) => [record, ...prev]);
-
-    // ② GAS に送信
-    try {
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(record),
-      });
-
-      if (!res.ok) {
-        throw new Error('GAS送信失敗');
-      }
-
-      console.log('sent to GAS');
-    } catch (err) {
-      alert('通信エラー');
-      console.error(err);
-    }
+  const record = {
+    property: selectedProperty,
+    type,
+    time: now.toISOString(),
   };
 
+  // ① ローカル保存（UI用）
+  setLogs((prev) => [record, ...prev]);
+
+  // ② GAS に送信（結果は気にしない）
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors', // ← ★超重要
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(record),
+    });
+
+    console.log('sent to GAS');
+  } catch (err) {
+    alert('通信エラー');
+    console.error(err);
+  }
+};
+  
   // 対象月のログ
   const monthLogs = logs.filter((l) =>
     l.time.startsWith(targetMonth)
