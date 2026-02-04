@@ -5,7 +5,11 @@ import { useEffect, useState } from 'react';
 // ===== 設定 =====
 const STAFFS = ['北川', '小池'];
 
-const PROPERTIES = ['今魚店の家', '樹々庵', 'はぎうみ'];
+const PROPERTIES = [
+  { key: '今魚店の家', short: '今' },
+  { key: '樹々庵', short: '樹' },
+  { key: 'はぎうみ', short: 'は' },
+];
 
 const PROPERTY_COLORS = {
   '今魚店の家': '#8B5A2B',
@@ -19,8 +23,10 @@ const PROPERTY_COLORS_LIGHT = {
   'はぎうみ': '#E6F6FB',
 };
 
-const CLOCK_IN_COLOR = '#BFE6A8';   // 黄緑（薄）
-const CLOCK_OUT_COLOR = '#F7C1D3';  // ピンク（薄)
+const CLOCK_IN_COLOR = '#BFE6A8';
+const CLOCK_IN_ACTIVE = '#8FCF6A';
+const CLOCK_OUT_COLOR = '#F7C1D3';
+const CLOCK_OUT_ACTIVE = '#E38AA8';
 
 const STORAGE_KEY = 'timecard_logs';
 const STAFF_KEY = 'timecard_staff';
@@ -34,6 +40,13 @@ export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState('');
   const [logs, setLogs] = useState([]);
   const [lastType, setLastType] = useState(null);
+  const [now, setNow] = useState(new Date());
+
+  // 時計更新
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   // 初回読み込み
   useEffect(() => {
@@ -42,7 +55,6 @@ export default function Page() {
       setStaff(savedStaff);
       setStaffFixed(true);
     }
-
     const savedLogs = localStorage.getItem(STORAGE_KEY);
     if (savedLogs) setLogs(JSON.parse(savedLogs));
   }, []);
@@ -51,23 +63,20 @@ export default function Page() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
   }, [logs]);
 
-  // スタッフ確定
   const confirmStaff = () => {
-    if (!staff) return alert('スタッフを選んでください');
+    if (!staff) return alert('名前を選んでください');
     localStorage.setItem(STAFF_KEY, staff);
     setStaffFixed(true);
   };
 
-  // スタッフ変更
   const resetStaff = () => {
     localStorage.removeItem(STAFF_KEY);
     setStaff('');
     setStaffFixed(false);
   };
 
-  // 打刻
   const handleClock = async (type) => {
-    if (!staffFixed) return alert('スタッフを確定してください');
+    if (!staffFixed) return alert('名前を確定してください');
     if (!selectedProperty) return alert('宿を選んでください');
     if (lastType === type) return alert('同じ操作は続けてできません');
 
@@ -93,9 +102,8 @@ export default function Page() {
     }
   };
 
-  // 今日の勤務履歴のみ
+  // 今日の履歴
   const today = new Date().toISOString().slice(0, 10);
-
   const todayPairs = [];
   let temp = null;
 
@@ -117,12 +125,14 @@ export default function Page() {
 
   return (
     <main style={{ padding: 24, fontSize: 18 }}>
-      <h1 style={{ fontSize: 28 }}>タイムカード</h1>
+
+      {/* 現在時刻 */}
+      <div style={{ fontSize: 40, fontWeight: 'bold', marginBottom: 24 }}>
+        {now.toLocaleTimeString('ja-JP')}
+      </div>
 
       {/* スタッフ選択 */}
       <section style={{ marginBottom: 24 }}>
-        <h2>スタッフ</h2>
-
         {!staffFixed ? (
           <>
             {STAFFS.map((s) => (
@@ -131,66 +141,66 @@ export default function Page() {
                 onClick={() => setStaff(s)}
                 style={{
                   width: '100%',
-                  padding: 14,
+                  padding: 16,
                   marginBottom: 8,
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: staff === s ? 'bold' : 'normal',
                 }}
               >
                 {s}
               </button>
             ))}
-            <button onClick={confirmStaff} style={{ width: '100%', marginTop: 8 }}>
+            <button onClick={confirmStaff} style={{ width: '100%', padding: 14 }}>
               確定
             </button>
           </>
         ) : (
           <>
-            <div style={{ fontSize: 22, fontWeight: 'bold' }}>{staff}</div>
-            <button onClick={resetStaff} style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{staff}</div>
+            <button onClick={resetStaff} style={{ marginTop: 8, padding: 12 }}>
               変更
             </button>
           </>
         )}
       </section>
 
-      {/* 宿選択（薄いカラー） */}
-      <section style={{ marginBottom: 24 }}>
-        <h2>宿を選択</h2>
+      {/* 宿選択 */}
+      <section style={{ marginBottom: 32 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {PROPERTIES.map((p) => (
-            <button
-              key={p}
-              onClick={() => setSelectedProperty(p)}
-              style={{
-                aspectRatio: '1 / 1',
-                borderRadius: 12,
-                border: 'none',
-                fontWeight: selectedProperty === p ? 'bold' : 'normal',
-                background:
-                  selectedProperty === p
-                    ? PROPERTY_COLORS[p]
-                    : PROPERTY_COLORS_LIGHT[p],
-                color: selectedProperty === p ? '#fff' : '#333',
-              }}
-            >
-              {p}
-            </button>
-          ))}
+          {PROPERTIES.map((p) => {
+            const active = selectedProperty === p.key;
+            return (
+              <button
+                key={p.key}
+                onClick={() => setSelectedProperty(p.key)}
+                style={{
+                  aspectRatio: '1 / 1',
+                  borderRadius: 16,
+                  border: 'none',
+                  background: active
+                    ? PROPERTY_COLORS[p.key]
+                    : PROPERTY_COLORS_LIGHT[p.key],
+                  color: active ? '#fff' : '#333',
+                }}
+              >
+                <div style={{ fontSize: 40, fontWeight: 'bold' }}>{p.short}</div>
+                <div style={{ fontSize: 14 }}>{p.key}</div>
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* 打刻 */}
-      <section style={{ marginBottom: 24 }}>
+      {/* 出勤・退勤 */}
+      <section style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 32 }}>
         <button
           onClick={() => handleClock('出勤')}
           style={{
-            width: '100%',
-            height: 64,
-            fontSize: 24,
-            marginBottom: 12,
-            background: lastType === '出勤' ? '#8FCF6A' : CLOCK_IN_COLOR,
-            borderRadius: 12,
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            fontSize: 22,
+            background: lastType === '出勤' ? CLOCK_IN_ACTIVE : CLOCK_IN_COLOR,
             border: 'none',
           }}
         >
@@ -200,11 +210,11 @@ export default function Page() {
         <button
           onClick={() => handleClock('退勤')}
           style={{
-            width: '100%',
-            height: 64,
-            fontSize: 24,
-            background: lastType === '退勤' ? '#E38AA8' : CLOCK_OUT_COLOR,
-            borderRadius: 12,
+            width: 120,
+            height: 120,
+            borderRadius: '50%',
+            fontSize: 22,
+            background: lastType === '退勤' ? CLOCK_OUT_ACTIVE : CLOCK_OUT_COLOR,
             border: 'none',
           }}
         >
@@ -212,28 +222,24 @@ export default function Page() {
         </button>
       </section>
 
-      {/* 今日の勤務履歴のみ */}
+      {/* 今日の履歴 */}
       <section>
-        <h2>今日の勤務履歴</h2>
-        <ul style={{ padding: 0 }}>
-          {todayPairs.map((p, i) => (
-            <li
-              key={i}
-              style={{
-                listStyle: 'none',
-                padding: 12,
-                marginBottom: 8,
-                borderRadius: 10,
-                background: '#f5f5f5',
-                color: PROPERTY_COLORS[p.property],
-              }}
-            >
-              <strong>{p.property}</strong><br />
-              {new Date(p.start).toLocaleTimeString('ja-JP')} 〜{' '}
-              {new Date(p.end).toLocaleTimeString('ja-JP')}
-            </li>
-          ))}
-        </ul>
+        {todayPairs.map((p, i) => (
+          <div
+            key={i}
+            style={{
+              marginBottom: 12,
+              padding: 12,
+              borderRadius: 12,
+              background: '#f5f5f5',
+              color: PROPERTY_COLORS[p.property],
+            }}
+          >
+            <strong>{p.property}</strong><br />
+            {new Date(p.start).toLocaleTimeString('ja-JP')} 〜{' '}
+            {new Date(p.end).toLocaleTimeString('ja-JP')}
+          </div>
+        ))}
       </section>
     </main>
   );
