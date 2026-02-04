@@ -6,8 +6,9 @@ import { useEffect, useState } from 'react';
 const PROPERTIES = ['今魚店の家', '樹々庵', 'はぎうみ'];
 const STORAGE_KEY = 'timecard_logs';
 
-// ★ 最新の GAS WebアプリURL（そのまま組み込み済み）
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhZt2llvbsTnw9UcPJVrXvcyBvrfI1yHlf2MtAjsO3w49l_Vr7ONiSTlcmJ1u_3Ie7/exec;
+// ★ 最新の GAS WebアプリURL
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhZt2llvbsTnw9UcPJVrXvcyBvrfI1yHlf2MtAjsO3w49l_Vr7ONiSTlcmJ1u_3Ie7/exec';
+
 export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState('');
   const [logs, setLogs] = useState([]);
@@ -42,10 +43,10 @@ export default function Page() {
       time: now.toISOString(),
     };
 
-    // ① まずローカルに保存（画面用）
+    // ① ローカルに保存（表示用）
     setLogs((prev) => [record, ...prev]);
 
-    // ② Google Apps Script に送信
+    // ② GAS に送信
     try {
       const res = await fetch(GAS_URL, {
         method: 'POST',
@@ -66,12 +67,12 @@ export default function Page() {
     }
   };
 
-  // 対象月のログのみ
+  // 対象月のログ
   const monthLogs = logs.filter((l) =>
     l.time.startsWith(targetMonth)
   );
 
-  // 出勤〜退勤の合計分数
+  // 作業時間計算
   const calculateMinutes = (property) => {
     const list = monthLogs
       .filter((l) => l.property === property)
@@ -81,9 +82,7 @@ export default function Page() {
     let clockIn = null;
 
     list.forEach((l) => {
-      if (l.type === '出勤') {
-        clockIn = new Date(l.time);
-      }
+      if (l.type === '出勤') clockIn = new Date(l.time);
       if (l.type === '退勤' && clockIn) {
         total += Math.floor((new Date(l.time) - clockIn) / 60000);
         clockIn = null;
@@ -127,9 +126,7 @@ export default function Page() {
       <h2>月次作業時間（分）</h2>
       <ul>
         {PROPERTIES.map((p) => (
-          <li key={p}>
-            {p}：{calculateMinutes(p)} 分
-          </li>
+          <li key={p}>{p}：{calculateMinutes(p)} 分</li>
         ))}
       </ul>
 
@@ -137,8 +134,7 @@ export default function Page() {
       <ul>
         {monthLogs.map((l, i) => (
           <li key={i}>
-            [{l.property}] {l.type} –{' '}
-            {new Date(l.time).toLocaleString('ja-JP')}
+            [{l.property}] {l.type} – {new Date(l.time).toLocaleString('ja-JP')}
           </li>
         ))}
       </ul>
