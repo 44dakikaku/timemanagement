@@ -7,7 +7,7 @@ const PROPERTIES = ['今魚店の家', '樹々庵', 'はぎうみ'];
 const STORAGE_KEY = 'timecard_logs';
 
 // ★ 最新の GAS WebアプリURL
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhZt2llvbsTnw9UcPJVrXvcyBvrfI1yHlf2MtAjsO3w49l_Vr7ONiSTlcmJ1u_3Ie7/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzv0evX_lRIsi7RZ1DNiyTFeQef4Ay08YV9kZvrM4kM_NVAMCSc49L5W9BMX-Sr9vm4/exec;
 
 export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState('');
