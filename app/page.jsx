@@ -6,7 +6,7 @@ const PROPERTIES = ['今魚店の家', '樹々庵', 'はぎうみ'];
 const STORAGE_KEY = 'timecard_logs';
 
 const GAS_URL =
-  'https://script.google.com/macros/s/AKfycbzwQ2ARHjnncmSRdap2EQJ0sh6Mj67x8k-d9z0olqhAaAjlUGrw8sKTGEhsdbhfsPVB/exec';
+ https://script.google.com/macros/s/AKfycbyhZt2llvbsTnw9UcPJVrXvcyBvrfI1yHlf2MtAjsO3w49l_Vr7ONiSTlcmJ1u_3Ie7/exec
 
 export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState('');
