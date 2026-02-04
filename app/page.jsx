@@ -4,10 +4,18 @@ import { useEffect, useState } from 'react';
 
 // ===== 設定 =====
 const PROPERTIES = ['今魚店の家', '樹々庵', 'はぎうみ'];
+
+const PROPERTY_COLORS = {
+  '今魚店の家': '#8B5A2B', // 茶色
+  '樹々庵': '#F4C430',     // 黄色
+  'はぎうみ': '#4DB6E6',   // 水色
+};
+
 const STORAGE_KEY = 'timecard_logs';
 
-// ★ 最新の GAS WebアプリURL
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzv0evX_lRIsi7RZ1DNiyTFeQef4Ay08YV9kZvrM4kM_NVAMCSc49L5W9BMX-Sr9vm4/exec;
+// ★ 実際に使っている GAS WebアプリURL（確定）
+const GAS_URL =
+  'https://script.google.com/macros/s/AKfycbzCNZTwFpGuyYsbsBR2lZ20SZMi6k-8QSX3mg-8PgIMgfJSYeJrMv8deQKKWpIXvtPR/exec';
 
 export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState('');
@@ -30,46 +38,39 @@ export default function Page() {
 
   // 打刻処理
   const handleClock = async (type) => {
-  if (!selectedProperty) {
-    alert('宿を選んでください');
-    return;
-  }
+    if (!selectedProperty) {
+      alert('宿を選んでください');
+      return;
+    }
 
-  const now = new Date();
+    const record = {
+      property: selectedProperty,
+      type,
+      time: new Date().toISOString(),
+    };
 
-  const record = {
-    property: selectedProperty,
-    type,
-    time: now.toISOString(),
+    // ① 画面表示用に保存
+    setLogs((prev) => [record, ...prev]);
+
+    // ② GAS に送信（結果は気にしない）
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record),
+      });
+    } catch {
+      alert('通信エラー');
+    }
   };
 
-  // ① ローカル保存（UI用）
-  setLogs((prev) => [record, ...prev]);
-
-  // ② GAS に送信（結果は気にしない）
-  try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      mode: 'no-cors', // ← ★超重要
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(record),
-    });
-
-    console.log('sent to GAS');
-  } catch (err) {
-    alert('通信エラー');
-    console.error(err);
-  }
-};
-  
   // 対象月のログ
   const monthLogs = logs.filter((l) =>
     l.time.startsWith(targetMonth)
   );
 
-  // 作業時間計算
+  // 作業時間計算（分）
   const calculateMinutes = (property) => {
     const list = monthLogs
       .filter((l) => l.property === property)
@@ -90,51 +91,130 @@ export default function Page() {
   };
 
   return (
-    <main style={{ padding: 20 }}>
-      <h1>タイムカード</h1>
+    <main style={{ padding: 24, fontSize: 18 }}>
+      <h1 style={{ fontSize: 28 }}>タイムカード</h1>
 
-      <h2>対象月</h2>
-      <input
-        type="month"
-        value={targetMonth}
-        onChange={(e) => setTargetMonth(e.target.value)}
-      />
+      {/* 対象月 */}
+      <section style={{ marginBottom: 24 }}>
+        <h2>対象月</h2>
+        <input
+          type="month"
+          value={targetMonth}
+          onChange={(e) => setTargetMonth(e.target.value)}
+          style={{ fontSize: 18, padding: 8 }}
+        />
+      </section>
 
-      <h2>宿を選択</h2>
-      {PROPERTIES.map((p) => (
+      {/* 宿選択 */}
+      <section style={{ marginBottom: 24 }}>
+        <h2>宿を選択</h2>
+        {PROPERTIES.map((p) => {
+          const active = selectedProperty === p;
+          return (
+            <button
+              key={p}
+              onClick={() => setSelectedProperty(p)}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: 56,
+                marginBottom: 12,
+                fontSize: 20,
+                fontWeight: 'bold',
+                borderRadius: 8,
+                border: 'none',
+                background: active ? PROPERTY_COLORS[p] : '#eee',
+                color: active ? '#fff' : '#333',
+              }}
+            >
+              {p}
+            </button>
+          );
+        })}
+      </section>
+
+      {/* 打刻 */}
+      <section style={{ marginBottom: 32 }}>
+        <h2>打刻</h2>
         <button
-          key={p}
-          onClick={() => setSelectedProperty(p)}
+          onClick={() => handleClock('出勤')}
           style={{
-            marginRight: 10,
-            padding: '8px 12px',
-            background: selectedProperty === p ? '#000' : '#ccc',
-            color: selectedProperty === p ? '#fff' : '#000',
+            width: '100%',
+            height: 60,
+            fontSize: 22,
+            marginBottom: 12,
+            background: '#2E7D32',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
           }}
         >
-          {p}
+          出勤
         </button>
-      ))}
 
-      <h2>打刻</h2>
-      <button onClick={() => handleClock('出勤')}>出勤</button>
-      <button onClick={() => handleClock('退勤')}>退勤</button>
+        <button
+          onClick={() => handleClock('退勤')}
+          style={{
+            width: '100%',
+            height: 60,
+            fontSize: 22,
+            background: '#C62828',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+          }}
+        >
+          退勤
+        </button>
+      </section>
 
-      <h2>月次作業時間（分）</h2>
-      <ul>
-        {PROPERTIES.map((p) => (
-          <li key={p}>{p}：{calculateMinutes(p)} 分</li>
-        ))}
-      </ul>
+      {/* 月次集計 */}
+      <section style={{ marginBottom: 24 }}>
+        <h2>月次作業時間（分）</h2>
+        <ul>
+          {PROPERTIES.map((p) => (
+            <li
+              key={p}
+              style={{ color: PROPERTY_COLORS[p], fontWeight: 'bold' }}
+            >
+              {p}：{calculateMinutes(p)} 分
+            </li>
+          ))}
+        </ul>
+      </section>
 
-      <h2>打刻履歴（当月）</h2>
-      <ul>
-        {monthLogs.map((l, i) => (
-          <li key={i}>
-            [{l.property}] {l.type} – {new Date(l.time).toLocaleString('ja-JP')}
-          </li>
-        ))}
-      </ul>
+      {/* 打刻履歴 */}
+      <section>
+        <h2>打刻履歴（当月）</h2>
+        <ul style={{ padding: 0 }}>
+          {monthLogs.map((l, i) => {
+            const d = new Date(l.time);
+            return (
+              <li
+                key={i}
+                style={{
+                  listStyle: 'none',
+                  marginBottom: 16,
+                  padding: 12,
+                  borderRadius: 8,
+                  background: '#f9f9f9',
+                  lineHeight: 1.6,
+                  color: PROPERTY_COLORS[l.property],
+                  fontSize: 18,
+                }}
+              >
+                <div style={{ fontWeight: 'bold' }}>
+                  {l.property}（{l.type}）
+                </div>
+                <div>{d.toLocaleDateString('ja-JP')}</div>
+                <div style={{ fontSize: 22 }}>
+                  {d.toLocaleTimeString('ja-JP')}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </main>
   );
 }
