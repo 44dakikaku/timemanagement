@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 
 const PROPERTIES = ['今魚店の家', '樹々庵', 'はぎうみ'];
 const STORAGE_KEY = 'timecard_logs';
-const GAS_URL = '★★ここに【最新の】GAS URL★★';
-
+const GAS_URL =
+  'https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxx/exec';
 export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState('');
   const [logs, setLogs] = useState([]);
